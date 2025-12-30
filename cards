@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Iaido Flashcards</title>
+  <style>
+    :root { --bg:#0b0c10; --card:#111318; --muted:#9aa3b2; --text:#eef2ff; --border:#242836; }
+    *{ box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body{ margin:0; background:linear-gradient(180deg,#0b0c10,#07080b); color:var(--text); }
+    .wrap{ max-width:900px; margin:0 auto; padding:18px; }
+    h1{ margin:6px 0 2px; font-size:22px; letter-spacing:.2px; }
+    .sub{ color:var(--muted); font-size:13px; margin:0 0 14px; }
+    .bar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0 14px; }
+    select,input,button{
+      background:#0f1117; color:var(--text); border:1px solid var(--border);
+      border-radius:12px; padding:10px 12px; font-size:14px;
+    }
+    input{ min-width:220px; flex:1; }
+    button{ cursor:pointer; }
+    button:hover{ border-color:#3a4060; }
+    .pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:999px; color:var(--muted); font-size:12px; }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin:10px 0; }
+    .card{
+      background:radial-gradient(1200px 600px at 20% 0%, #161a25, var(--card));
+      border:1px solid var(--border); border-radius:18px; padding:18px;
+      min-height:180px; display:flex; flex-direction:column; justify-content:space-between;
+    }
+    .face{ color:var(--muted); font-size:11px; letter-spacing:.7px; }
+    .big{ font-size:26px; line-height:1.25; margin:10px 0 14px; }
+    .hint{ color:var(--muted); font-size:12px; }
+    .nav{ display:flex; gap:10px; }
+    .rate{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .rate button{ padding:12px 10px; font-weight:600; }
+    .rate button:disabled{ opacity:.45; cursor:not-allowed; }
+    .tiny{ color:var(--muted); font-size:12px; text-align:center; margin-top:8px;}
+    .list{
+      margin-top:16px; border:1px solid var(--border); border-radius:18px; overflow:hidden;
+      background:#0f1117;
+    }
+    .list h2{ font-size:14px; margin:0; padding:12px 14px; border-bottom:1px solid var(--border); }
+    .item{ padding:12px 14px; border-bottom:1px solid var(--border); }
+    .item:last-child{ border-bottom:0; }
+    .item b{ display:block; margin-bottom:4px; }
+    .muted{ color:var(--muted); }
+    .progress{ height:10px; background:#0f1117; border:1px solid var(--border); border-radius:999px; overflow:hidden; }
+    .progress > div{ height:100%; background:#6d7cff; width:0%; }
+    .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; padding:2px 6px; border:1px solid var(--border); border-radius:8px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Iaido Flashcards</h1>
+    <p class="sub">Один файл. Работает офлайн. <span class="kbd">Space</span>/<span class="kbd">Enter</span> — перевернуть, <span class="kbd">←</span>/<span class="kbd">→</span> — навигация.</p>
+
+    <div class="bar">
+      <select id="deck"></select>
+      <select id="mode">
+        <option value="study">Study</option>
+        <option value="quiz">Quiz</option>
+      </select>
+      <input id="search" placeholder="Поиск: mae, zanshin, tsuki…" />
+      <button id="shuffle">Shuffle</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <div class="row">
+      <div class="pill" id="meta"></div>
+      <div class="pill" id="score"></div>
+    </div>
+
+    <div class="progress" aria-label="Progress"><div id="prog"></div></div>
+
+    <div class="row" style="margin-top:12px;">
+      <div class="nav">
+        <button id="prev">←</button>
+        <button id="next">→</button>
+      </div>
+      <div class="pill muted" id="counter"></div>
+    </div>
+
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard">
+      <div>
+        <div class="face" id="face">ЛИЦЕВАЯ</div>
+        <div class="big" id="text">—</div>
+      </div>
+      <div class="hint" id="hint">Нажми карточку, чтобы перевернуть</div>
+    </div>
+
+    <div class="rate">
+      <button id="again" disabled>Again (1)</button>
+      <button id="hard" disabled>Hard (2)</button>
+      <button id="good" disabled>Good (3)</button>
+    </div>
+    <div class="tiny">Оценка доступна после переворота. В Quiz: Hard/Good = «верно», Again = «неверно».</div>
+
+    <div class="list">
+      <h2>Справочник (вся колода)</h2>
+      <div id="list"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const decks = {
+    seitei: {
+      name: "Seitei Iaido — 12 ката",
+      cards: [
+        {front:"Ipponme Mae", back:"1-я форма — Mae = «вперёд/перед»."},
+        {front:"Nihonme Ushiro", back:"2-я форма — Ushiro = «назад»."},
+        {front:"Sanbonme Uke Nagashi", back:"3-я форма — Uke = «принять», Nagashi = «увести»."},
+        {front:"Yonhonme Tsuka Ate", back:"4-я форма — Tsuka = «рукоять», Ate = «удар»."},
+        {front:"Gohonme Kesa Giri", back:"5-я форма — Kesa = «диагональ», Giri = «рез»."},
+        {front:"Ropponme Morote Tsuki", back:"6-я форма — Morote = «две руки», Tsuki = «укол»."},
+        {front:"Nanahonme Sanpō Giri", back:"7-я форма — Sanpō = «три стороны», Giri = «рез»."},
+        {front:"Hachihonme Ganmen Ate", back:"8-я форма — Ganmen = «лицо», Ate = «удар»."},
+        {front:"Kyūhonme Sōete Tsuki", back:"9-я форма — Sōete = «поддержка рукой», Tsuki = «укол»."},
+        {front:"Jūpponme Shiho Giri", back:"10-я форма — Shiho = «четыре стороны», Giri = «рез»."},
+        {front:"Jūipponme Sō Giri", back:"11-я форма — Sō = «общий/полный», Giri = «рез»."},
+        {front:"Jūnihonme Nuki Uchi", back:"12-я форма — Nuki = «извлечь», Uchi = «удар»."},
+      ]
+    },
+    terms: {
+      name: "Основные термины иайдо",
+      cards: [
+        {front:"Reiho", back:"Этикет и порядок поклонов/процедур в иайдо."},
+        {front:"Saho", back:"Манеры/поведение: вход в додзё, обращение с мечом, безопасность."},
+        {front:"Zanshin", back:"«Оставшийся дух»: готовность и осознанность после удара до самого конца."},
+        {front:"Metsuke", back:"Постановка взгляда: широкое видение, контроль пространства."},
+        {front:"Tenouchi", back:"Работа кистей: контроль, расслабление в движении и фиксация в конце реза."},
+        {front:"Ki–Ken–Tai–Ichi", back:"Единство духа, меча и тела: действие происходит одновременно."},
+        {front:"Jo–Ha–Kyu", back:"Ритм: начало (Jo) → развитие (Ha) → быстрое завершение (Kyu)."},
+        {front:"Hasuji", back:"Угол/направление лезвия при резе — критично для качества удара."},
+        {front:"Nukitsuke", back:"Режущее действие при извлечении меча."},
+        {front:"Furi-kaburi", back:"Подъём меча над головой для подготовки решающего удара."},
+        {front:"Kiri-oroshi", back:"Вертикальный рубящий удар сверху вниз."},
+        {front:"Kesa-giri", back:"Диагональный рез."},
+        {front:"Chiburi", back:"Символическое «очищение клинка» после техники."},
+        {front:"Noto", back:"Контролируемое и безопасное возвращение меча в ножны."},
+        {front:"Saya-biki", back:"Оттягивание сая назад левой рукой при извлечении."},
+      ]
+    }
+  };
+
+  // --- state ---
+  let deckKey = localStorage.getItem("iaido_deck") || "seitei";
+  let mode = localStorage.getItem("iaido_mode") || "study";
+  let search = "";
+  let order = [];
+  let idx = 0;
+  let flipped = false;
+  let score = { correct: 0, total: 0 };
+
+  // --- dom ---
+  const $deck = document.getElementById("deck");
+  const $mode = document.getElementById("mode");
+  const $search = document.getElementById("search");
+  const $shuffle = document.getElementById("shuffle");
+  const $reset = document.getElementById("reset");
+  const $prev = document.getElementById("prev");
+  const $next = document.getElementById("next");
+  const $card = document.getElementById("card");
+  const $face = document.getElementById("face");
+  const $text = document.getElementById("text");
+  const $hint = document.getElementById("hint");
+  const $meta = document.getElementById("meta");
+  const $score = document.getElementById("score");
+  const $counter = document.getElementById("counter");
+  const $prog = document.getElementById("prog");
+  const $list = document.getElementById("list");
+  const $again = document.getElementById("again");
+  const $hard = document.getElementById("hard");
+  const $good = document.getElementById("good");
+
+  // init selects
+  $deck.innerHTML = Object.keys(decks).map(k => `<option value="${k}">${decks[k].name}</option>`).join("");
+  $deck.value = deckKey;
+  $mode.value = mode;
+
+  function currentDeck(){ return decks[deckKey]; }
+
+  function filteredCards(){
+    const q = search.trim().toLowerCase();
+    const cards = currentDeck().cards.map((c,i)=>({...c, id: deckKey+":"+i}));
+    return cards.filter(c => !q || c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q));
+  }
+
+  function rebuild(shuf=false){
+    const cards = filteredCards();
+    order = cards.slice();
+    if (shuf) order.sort(()=>Math.random()-0.5);
+    idx = 0;
+    flipped = false;
+    score = {correct:0,total:0};
+    render();
+    renderList();
+  }
+
+  function render(){
+    const total = order.length;
+    $meta.textContent = `Колода: ${currentDeck().name}`;
+    $score.textContent = mode === "quiz"
+      ? `Счёт: ${score.correct}/${score.total}${score.total?` (${Math.round(score.correct/score.total*100)}%)`:""}`
+      : `Режим: Study`;
+
+    if (!total){
+      $face.textContent = "—";
+      $text.textContent = "Нет карточек. Очисти поиск.";
+      $hint.textContent = "";
+      $counter.textContent = "0/0";
+      $prog.style.width = "0%";
+      $again.disabled = $hard.disabled = $good.disabled = true;
+      return;
+    }
+
+    const card = order[idx];
+    $face.textContent = flipped ? "ОБРАТНАЯ" : "ЛИЦЕВАЯ";
+    $text.textContent = flipped ? card.back : card.front;
+    $hint.textContent = "Нажми карточку, чтобы перевернуть";
+    $counter.textContent = `${idx+1}/${total}`;
+    $prog.style.width = `${Math.round((idx+1)/total*100)}%`;
+
+    $prev.disabled = idx===0;
+    $next.disabled = idx===total-1;
+
+    // rating only after flip
+    const dis = !flipped;
+    $again.disabled = dis; $hard.disabled = dis; $good.disabled = dis;
+  }
+
+  function renderList(){
+    const cards = filteredCards();
+    $list.innerHTML = cards.map(c => `
+      <div class="item">
+        <b>${escapeHtml(c.front)}</b>
+        <div class="muted">${escapeHtml(c.back)}</div>
+      </div>
+    `).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  }
+
+  function flip(){ flipped = !flipped; render(); }
+  function next(){ if (idx < order.length-1){ idx++; flipped=false; render(); } }
+  function prev(){ if (idx > 0){ idx--; flipped=false; render(); } }
+
+  function rate(kind){
+    if (!order.length) return;
+    if (mode === "quiz"){
+      score.total += 1;
+      if (kind !== "again") score.correct += 1;
+      $score.textContent = `Счёт: ${score.correct}/${score.total} (${Math.round(score.correct/score.total*100)}%)`;
+    }
+    // auto advance
+    next();
+  }
+
+  // events
+  $deck.addEventListener("change", e=>{
+    deckKey = e.target.value;
+    localStorage.setItem("iaido_deck", deckKey);
+    rebuild(mode==="quiz");
+  });
+  $mode.addEventListener("change", e=>{
+    mode = e.target.value;
+    localStorage.setItem("iaido_mode", mode);
+    rebuild(mode==="quiz");
+  });
+  $search.addEventListener("input", e=>{
+    search = e.target.value;
+    rebuild(mode==="quiz");
+  });
+
+  $shuffle.addEventListener("click", ()=> rebuild(true));
+  $reset.addEventListener("click", ()=> { search=""; $search.value=""; rebuild(mode==="quiz"); });
+
+  $prev.addEventListener("click", prev);
+  $next.addEventListener("click", next);
+
+  $card.addEventListener("click", flip);
+  $card.addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); } });
+
+  $again.addEventListener("click", ()=>rate("again"));
+  $hard.addEventListener("click", ()=>rate("hard"));
+  $good.addEventListener("click", ()=>rate("good"));
+
+  window.addEventListener("keydown", (e)=>{
+    if (e.key==="ArrowRight") next();
+    if (e.key==="ArrowLeft") prev();
+    if (e.key===" " || e.key==="Enter"){ e.preventDefault(); flip(); }
+    if (e.key==="1") rate("again");
+    if (e.key==="2") rate("hard");
+    if (e.key==="3") rate("good");
+  });
+
+  // start
+  rebuild(mode==="quiz");
+})();
+</script>
+</body>
+</html>
