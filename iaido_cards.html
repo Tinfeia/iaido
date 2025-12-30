@@ -54,6 +54,10 @@
     <p class="sub">Один файл. Работает офлайн. <span class="kbd">Space</span>/<span class="kbd">Enter</span> — перевернуть, <span class="kbd">←</span>/<span class="kbd">→</span> — навигация.</p>
 
     <div class="bar">
+        <select id="lang">
+  <option value="ru">RU</option>
+  <option value="en">EN</option>
+</select>
       <select id="deck"></select>
       <select id="mode">
         <option value="study">Study</option>
@@ -102,42 +106,47 @@
 
 <script>
 (function(){
+  // --- language (must be inside IIFE) ---
+  let lang = localStorage.getItem("iaido_lang") || "ru";
+
+  // --- data ---
   const decks = {
     seitei: {
-      name: "Seitei Iaido — 12 ката",
+      name: { ru: "Seitei Iaido — 12 ката", en: "Seitei Iaido — 12 Kata" },
       cards: [
-        {front:"Ipponme Mae", back:"1-я форма — Mae = «вперёд/перед»."},
-        {front:"Nihonme Ushiro", back:"2-я форма — Ushiro = «назад»."},
-        {front:"Sanbonme Uke Nagashi", back:"3-я форма — Uke = «принять», Nagashi = «увести»."},
-        {front:"Yonhonme Tsuka Ate", back:"4-я форма — Tsuka = «рукоять», Ate = «удар»."},
-        {front:"Gohonme Kesa Giri", back:"5-я форма — Kesa = «диагональ», Giri = «рез»."},
-        {front:"Ropponme Morote Tsuki", back:"6-я форма — Morote = «две руки», Tsuki = «укол»."},
-        {front:"Nanahonme Sanpō Giri", back:"7-я форма — Sanpō = «три стороны», Giri = «рез»."},
-        {front:"Hachihonme Ganmen Ate", back:"8-я форма — Ganmen = «лицо», Ate = «удар»."},
-        {front:"Kyūhonme Sōete Tsuki", back:"9-я форма — Sōete = «поддержка рукой», Tsuki = «укол»."},
-        {front:"Jūpponme Shiho Giri", back:"10-я форма — Shiho = «четыре стороны», Giri = «рез»."},
-        {front:"Jūipponme Sō Giri", back:"11-я форма — Sō = «общий/полный», Giri = «рез»."},
-        {front:"Jūnihonme Nuki Uchi", back:"12-я форма — Nuki = «извлечь», Uchi = «удар»."},
+        { front:{ru:"Ipponme Mae",en:"Ipponme Mae"}, back:{ru:"1-я форма — Mae = «вперёд / перед». Противник спереди.", en:"First form — Mae = “front / forward”. Opponent in front."}},
+        { front:{ru:"Nihonme Ushiro",en:"Nihonme Ushiro"}, back:{ru:"2-я форма — Ushiro = «назад». Противник атакует сзади.", en:"Second form — Ushiro = “rear / behind”. Opponent attacks from behind."}},
+        { front:{ru:"Sanbonme Uke Nagashi",en:"Sanbonme Uke Nagashi"}, back:{ru:"3-я форма — «принять и отвести атаку». Контроль тайминга.", en:"Third form — “receive and deflect”. Timing and blade control."}},
+        { front:{ru:"Yonhonme Tsuka Ate",en:"Yonhonme Tsuka Ate"}, back:{ru:"4-я форма — «удар рукоятью». Противники спереди и сзади.", en:"Fourth form — “strike with the hilt”. Enemies front and rear."}},
+        { front:{ru:"Gohonme Kesa Giri",en:"Gohonme Kesa Giri"}, back:{ru:"5-я форма — «диагональный рез». Работа корпуса и ног.", en:"Fifth form — “diagonal cut”. Body movement and footwork."}},
+        { front:{ru:"Ropponme Morote Tsuki",en:"Ropponme Morote Tsuki"}, back:{ru:"6-я форма — «укол двумя руками». Чёткое ki–ken–tai–ichi.", en:"Sixth form — “two-handed thrust”. Clear ki–ken–tai–ichi."}},
+        { front:{ru:"Nanahonme Sanpō Giri",en:"Nanahonme Sanpō Giri"}, back:{ru:"7-я форма — «резы в трёх направлениях». Контроль пространства.", en:"Seventh form — “cuts in three directions”. Spatial awareness."}},
+        { front:{ru:"Hachihonme Ganmen Ate",en:"Hachihonme Ganmen Ate"}, back:{ru:"8-я форма — «удар в лицо». Точный metsuke и дистанция.", en:"Eighth form — “strike to the face”. Accurate metsuke and maai."}},
+        { front:{ru:"Kyūhonme Sōete Tsuki",en:"Kyūhonme Sōete Tsuki"}, back:{ru:"9-я форма — «укол с поддержкой руки». Контроль клинка.", en:"Ninth form — “supported thrust”. Blade control and precision."}},
+        { front:{ru:"Jūpponme Shiho Giri",en:"Jūpponme Shiho Giri"}, back:{ru:"10-я форма — «резы в четырёх направлениях». Контроль центра.", en:"Tenth form — “cuts in four directions”. Center control."}},
+        { front:{ru:"Jūipponme Sō Giri",en:"Jūipponme Sō Giri"}, back:{ru:"11-я форма — «последовательный рез». Непрерывность движений.", en:"Eleventh form — “continuous cuts”. Continuous flow."}},
+        { front:{ru:"Jūnihonme Nuki Uchi",en:"Jūnihonme Nuki Uchi"}, back:{ru:"12-я форма — «мгновенное извлечение и удар». Минимум движений.", en:"Twelfth form — “draw and strike”. Immediate decisive action."}},
       ]
     },
+
     terms: {
-      name: "Основные термины иайдо",
+      name: { ru: "Основные термины иайдо", en: "Core Iaido Terms" },
       cards: [
-        {front:"Reiho", back:"Этикет и порядок поклонов/процедур в иайдо."},
-        {front:"Saho", back:"Манеры/поведение: вход в додзё, обращение с мечом, безопасность."},
-        {front:"Zanshin", back:"«Оставшийся дух»: готовность и осознанность после удара до самого конца."},
-        {front:"Metsuke", back:"Постановка взгляда: широкое видение, контроль пространства."},
-        {front:"Tenouchi", back:"Работа кистей: контроль, расслабление в движении и фиксация в конце реза."},
-        {front:"Ki–Ken–Tai–Ichi", back:"Единство духа, меча и тела: действие происходит одновременно."},
-        {front:"Jo–Ha–Kyu", back:"Ритм: начало (Jo) → развитие (Ha) → быстрое завершение (Kyu)."},
-        {front:"Hasuji", back:"Угол/направление лезвия при резе — критично для качества удара."},
-        {front:"Nukitsuke", back:"Режущее действие при извлечении меча."},
-        {front:"Furi-kaburi", back:"Подъём меча над головой для подготовки решающего удара."},
-        {front:"Kiri-oroshi", back:"Вертикальный рубящий удар сверху вниз."},
-        {front:"Kesa-giri", back:"Диагональный рез."},
-        {front:"Chiburi", back:"Символическое «очищение клинка» после техники."},
-        {front:"Noto", back:"Контролируемое и безопасное возвращение меча в ножны."},
-        {front:"Saya-biki", back:"Оттягивание сая назад левой рукой при извлечении."},
+        { front:{ru:"Reiho",en:"Reiho"}, back:{ru:"Этикет и установленный порядок поклонов и процедур в иайдо.", en:"Etiquette and prescribed manners in Iaido."}},
+        { front:{ru:"Saho",en:"Saho"}, back:{ru:"Правильное поведение в додзё и обращение с мечом.", en:"Correct behavior and procedures in the dojo."}},
+        { front:{ru:"Zanshin",en:"Zanshin"}, back:{ru:"Сохраняемая готовность и осознанность после завершения техники.", en:"Remaining awareness and readiness after completing a technique."}},
+        { front:{ru:"Metsuke",en:"Metsuke"}, back:{ru:"Постановка взгляда с контролем всего пространства.", en:"Use of the eyes to maintain awareness of the whole situation."}},
+        { front:{ru:"Tenouchi",en:"Tenouchi"}, back:{ru:"Правильная работа кистей при резе: контроль и фиксация.", en:"Proper use of the hands and grip during cutting."}},
+        { front:{ru:"Ki–Ken–Tai–Ichi",en:"Ki–Ken–Tai–Ichi"}, back:{ru:"Единство духа, меча и тела в одном действии.", en:"Unity of spirit, sword, and body in a single action."}},
+        { front:{ru:"Jo–Ha–Kyu",en:"Jo–Ha–Kyu"}, back:{ru:"Принцип ритма: начало, развитие и быстрое завершение.", en:"Principle of rhythm: beginning, development, and rapid conclusion."}},
+        { front:{ru:"Hasuji",en:"Hasuji"}, back:{ru:"Правильное направление лезвия при выполнении реза.", en:"Correct blade angle and alignment during a cut."}},
+        { front:{ru:"Nukitsuke",en:"Nukitsuke"}, back:{ru:"Режущее действие, выполняемое при извлечении меча.", en:"Cut performed simultaneously with drawing the sword."}},
+        { front:{ru:"Furi-kaburi",en:"Furi-kaburi"}, back:{ru:"Подъём меча над головой для подготовки основного удара.", en:"Raising the sword overhead in preparation for the main cut."}},
+        { front:{ru:"Kiri-oroshi",en:"Kiri-oroshi"}, back:{ru:"Вертикальный рубящий удар сверху вниз.", en:"Vertical downward cut."}},
+        { front:{ru:"Kesa-giri",en:"Kesa-giri"}, back:{ru:"Диагональный рез от плеча к противоположному бедру.", en:"Diagonal cut from shoulder to opposite hip."}},
+        { front:{ru:"Chiburi",en:"Chiburi"}, back:{ru:"Символическое движение очищения клинка после удара.", en:"Symbolic motion representing cleaning blood from the blade."}},
+        { front:{ru:"Noto",en:"Noto"}, back:{ru:"Контролируемое и безопасное возвращение меча в ножны.", en:"Controlled and safe resheathing of the sword."}},
+        { front:{ru:"Saya-biki",en:"Saya-biki"}, back:{ru:"Оттягивание ножен назад левой рукой при извлечении.", en:"Pulling the scabbard back with the left hand while drawing."}},
       ]
     }
   };
@@ -152,6 +161,7 @@
   let score = { correct: 0, total: 0 };
 
   // --- dom ---
+  const $lang = document.getElementById("lang");
   const $deck = document.getElementById("deck");
   const $mode = document.getElementById("mode");
   const $search = document.getElementById("search");
@@ -173,16 +183,26 @@
   const $good = document.getElementById("good");
 
   // init selects
-  $deck.innerHTML = Object.keys(decks).map(k => `<option value="${k}">${decks[k].name}</option>`).join("");
-  $deck.value = deckKey;
+  $lang.value = lang;
   $mode.value = mode;
+
+  function rebuildDeckSelect(){
+    $deck.innerHTML = Object.keys(decks)
+      .map(k => `<option value="${k}">${decks[k].name[lang]}</option>`)
+      .join("");
+    $deck.value = deckKey;
+  }
 
   function currentDeck(){ return decks[deckKey]; }
 
   function filteredCards(){
     const q = search.trim().toLowerCase();
     const cards = currentDeck().cards.map((c,i)=>({...c, id: deckKey+":"+i}));
-    return cards.filter(c => !q || c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q));
+    return cards.filter(c =>
+      !q ||
+      c.front[lang].toLowerCase().includes(q) ||
+      c.back[lang].toLowerCase().includes(q)
+    );
   }
 
   function rebuild(shuf=false){
@@ -198,32 +218,33 @@
 
   function render(){
     const total = order.length;
-    $meta.textContent = `Колода: ${currentDeck().name}`;
+
+    $meta.textContent = `Колода: ${currentDeck().name[lang]}`;
     $score.textContent = mode === "quiz"
       ? `Счёт: ${score.correct}/${score.total}${score.total?` (${Math.round(score.correct/score.total*100)}%)`:""}`
       : `Режим: Study`;
 
     if (!total){
       $face.textContent = "—";
-      $text.textContent = "Нет карточек. Очисти поиск.";
+      $text.textContent = (lang === "ru") ? "Нет карточек. Очисти поиск." : "No cards. Clear the search.";
       $hint.textContent = "";
       $counter.textContent = "0/0";
       $prog.style.width = "0%";
       $again.disabled = $hard.disabled = $good.disabled = true;
+      $prev.disabled = $next.disabled = true;
       return;
     }
 
     const card = order[idx];
-    $face.textContent = flipped ? "ОБРАТНАЯ" : "ЛИЦЕВАЯ";
-    $text.textContent = flipped ? card.back : card.front;
-    $hint.textContent = "Нажми карточку, чтобы перевернуть";
+    $face.textContent = flipped ? ((lang==="ru")?"ОБРАТНАЯ":"BACK") : ((lang==="ru")?"ЛИЦЕВАЯ":"FRONT");
+    $text.textContent = flipped ? card.back[lang] : card.front[lang];
+    $hint.textContent = (lang==="ru") ? "Нажми карточку, чтобы перевернуть" : "Click the card to flip";
     $counter.textContent = `${idx+1}/${total}`;
     $prog.style.width = `${Math.round((idx+1)/total*100)}%`;
 
     $prev.disabled = idx===0;
     $next.disabled = idx===total-1;
 
-    // rating only after flip
     const dis = !flipped;
     $again.disabled = dis; $hard.disabled = dis; $good.disabled = dis;
   }
@@ -232,14 +253,10 @@
     const cards = filteredCards();
     $list.innerHTML = cards.map(c => `
       <div class="item">
-        <b>${escapeHtml(c.front)}</b>
-        <div class="muted">${escapeHtml(c.back)}</div>
+        <b>${c.front[lang]}</b>
+        <div class="muted">${c.back[lang]}</div>
       </div>
     `).join("");
-  }
-
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   }
 
   function flip(){ flipped = !flipped; render(); }
@@ -253,21 +270,29 @@
       if (kind !== "again") score.correct += 1;
       $score.textContent = `Счёт: ${score.correct}/${score.total} (${Math.round(score.correct/score.total*100)}%)`;
     }
-    // auto advance
     next();
   }
 
   // events
+  $lang.addEventListener("change", e => {
+    lang = e.target.value;
+    localStorage.setItem("iaido_lang", lang);
+    rebuildDeckSelect();
+    rebuild(mode==="quiz");
+  });
+
   $deck.addEventListener("change", e=>{
     deckKey = e.target.value;
     localStorage.setItem("iaido_deck", deckKey);
     rebuild(mode==="quiz");
   });
+
   $mode.addEventListener("change", e=>{
     mode = e.target.value;
     localStorage.setItem("iaido_mode", mode);
     rebuild(mode==="quiz");
   });
+
   $search.addEventListener("input", e=>{
     search = e.target.value;
     rebuild(mode==="quiz");
@@ -296,8 +321,10 @@
   });
 
   // start
+  rebuildDeckSelect();
   rebuild(mode==="quiz");
 })();
 </script>
+
 </body>
 </html>
